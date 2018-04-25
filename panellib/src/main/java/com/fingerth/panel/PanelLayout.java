@@ -14,7 +14,6 @@ import android.view.animation.Animation.AnimationListener;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.TranslateAnimation;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
@@ -133,6 +132,8 @@ public class PanelLayout extends LinearLayout {
         if (mHandle == null) {
             throw new RuntimeException("Your Panel must have a View whose id attribute is 'R.id.panelHandle'");
         }
+
+//        mHandle.setOnClickListener(onClickListener);
         mHandle.setOnTouchListener(touchListener);
 
         mContent = findViewById(R.id.panelContent);
@@ -198,6 +199,7 @@ public class PanelLayout extends LinearLayout {
         return v;
     }
 
+
     OnTouchListener touchListener = new OnTouchListener() {
         float touchX, touchY;
 
@@ -208,20 +210,16 @@ public class PanelLayout extends LinearLayout {
             }
             int action = event.getAction();
             if (action == MotionEvent.ACTION_DOWN) {
-                if (true) {
-                    bringToFront();
-                }
+                //bringToFront();
                 touchX = event.getX();
                 touchY = event.getY();
             }
+            //Log.v("TagOnTouchListener", "touchListener:  touchX = " + touchX + " ; touchY = " + touchY);
             if (!mGestureDetector.onTouchEvent(event)) {
                 if (action == MotionEvent.ACTION_UP) {
-                    // tup up after scrolling
                     int size = (int) (Math.abs(touchX - event.getX()) + Math.abs(touchY - event.getY()));
                     if (size == mContentWidth || size == mContentHeight) {
                         mState = State.ABOUT_TO_ANIMATE;
-                        //Log.e("size", String.valueOf(size));
-                        //Log.e(String.valueOf(mContentWidth),String.valueOf(mContentHeight));
                     }
                     post(startAnimation);
                 }
@@ -268,6 +266,7 @@ public class PanelLayout extends LinearLayout {
                 int width = mContentWidth;
                 if (!mIsShrinking) {
                     fromXDelta = mPosition == LEFT ? -width : width;
+                    //Log.v("TagOnTouchListener", "fromXDelta:  fromXDelta = " + fromXDelta);
                 } else {
                     toXDelta = mPosition == LEFT ? -width : width;
                 }
@@ -289,7 +288,8 @@ public class PanelLayout extends LinearLayout {
                     calculatedDuration = mDuration * Math.abs(toXDelta - fromXDelta) / mContentWidth;
                 }
             }
-
+//            Log.v("TagOnTouchListener", "calculatedDuration:  calculatedDuration = " + calculatedDuration);
+//            Log.v("TagOnTouchListener", "fromXDelta:  fromXDelta = " + fromXDelta);
             mTrackX = mTrackY = 0;
             if (calculatedDuration == 0) {
                 mState = State.READY;
@@ -299,15 +299,21 @@ public class PanelLayout extends LinearLayout {
                 postProcess();
                 return;
             }
-
+            //invalidate();
+            //Log.v("TagOnTouchListener", "calculatedDuration:  calculatedDuration = " + calculatedDuration);
+//            Log.v("TagOnTouchListener", "fromXDelta:  fromXDelta = " + fromXDelta);
+//            Log.v("TagOnTouchListener", "toXDelta:  toXDelta = " + toXDelta);
             animation = new TranslateAnimation(fromXDelta, toXDelta, fromYDelta, toYDelta);
             animation.setDuration(calculatedDuration);
             animation.setAnimationListener(animationListener);
             if (mState == State.FLYING && mLinearFlying) {
                 animation.setInterpolator(new LinearInterpolator());
+                //Log.v("TagOnTouchListener", "mState == State.FLYING && mLinearFlying" );
             } else if (mInterpolator != null) {
                 animation.setInterpolator(mInterpolator);
+                //Log.v("TagOnTouchListener", "mInterpolator != null" );
             }
+            //Log.v("TagOnTouchListener", "xxxxxxxxx" );
             startAnimation(animation);
         }
     };
@@ -315,10 +321,12 @@ public class PanelLayout extends LinearLayout {
     private AnimationListener animationListener = new AnimationListener() {
         public void onAnimationEnd(Animation animation) {
             mState = State.READY;
+//            Log.v("TagOnTouchListener", "mIsShrinking:  mIsShrinking = " + mIsShrinking);
             if (mIsShrinking) {
                 mContent.setVisibility(GONE);
             }
             postProcess();
+            invalidate();
         }
 
         public void onAnimationRepeat(Animation animation) {
@@ -363,6 +371,7 @@ public class PanelLayout extends LinearLayout {
         }
 
         public boolean onDown(MotionEvent e) {
+//            Log.v("TagOnTouchListener", "PanelOnGestureListener:  onDown()");
             scrollX = scrollY = 0;
             if (mState != State.READY) {
                 // we are animating or just about to animate
@@ -374,11 +383,14 @@ public class PanelLayout extends LinearLayout {
                 // this could make flicker so we test mState in dispatchDraw()
                 // to see if is equal to ABOUT_TO_ANIMATE
                 mContent.setVisibility(VISIBLE);
+
+//                Log.v("TagOnTouchListener", " mContent.setVisibility(VISIBLE)");
             }
             return true;
         }
 
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            //Log.v("TagOnTouchListener", "PanelOnGestureListener:  onFling()");
             mState = State.FLYING;
             mVelocity = mOrientation == VERTICAL ? velocityY : velocityX;
             post(startAnimation);
@@ -390,6 +402,7 @@ public class PanelLayout extends LinearLayout {
         }
 
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            //Log.v("TagOnTouchListener", "PanelOnGestureListener:  onScroll()");
             mState = State.TRACKING;
             float tmpY = 0, tmpX = 0;
             if (mOrientation == VERTICAL) {
@@ -420,6 +433,8 @@ public class PanelLayout extends LinearLayout {
         }
 
         public boolean onSingleTapUp(MotionEvent e) {
+//            Log.v("TagOnTouchListener", "PanelOnGestureListener:  onSingleTapUp()");
+            //Log.v("TagOnTouchListener", "mContent.getVisibility()==View.VISIBLE = " + (mContent.getVisibility() == View.VISIBLE));
             // simple tap: click
             post(startAnimation);
             return true;
